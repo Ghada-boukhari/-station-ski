@@ -2,21 +2,19 @@ pipeline {
     agent any
 
     environment {
-        SONAR_HOST_URL = 'http://localhost:9000'  // URL de votre SonarQube
-        SONAR_TOKEN = 'your-sonar-token'          // Remplacez par votre token SonarQube
+        SONAR_HOST_URL = 'http://192.168.33.10:9000'  // URL de votre serveur SonarQube
+        SONAR_TOKEN = credentials('GUBGMHVpwcTsPFvNNVdG5DKtpv6UwksAfzw5aULcGzgG')    // Nom du credential que vous avez créé dans Jenkins
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Récupère le code depuis GitHub
-                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/Ghada-boukhari/-station-ski.git'
+                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/ghadaboukhari/station-ski.git'
             }
         }
 
         stage('Build') {
             steps {
-                // Compile et installe avec Maven
                 script {
                     sh 'mvn clean install'
                 }
@@ -25,29 +23,28 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                // Lance l'analyse SonarQube avec Maven
                 script {
-                    sh 'mvn sonar:sonar -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN}'
+                    // Exécute l'analyse SonarQube
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=station-ski -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN}'
                 }
             }
         }
 
-        stage('Push to Nexus') {
+        stage('Test') {
             steps {
-                // Déploie le fichier .jar sur Nexus
                 script {
-                    sh 'mvn deploy:deploy-file -Dfile=target/your-artifact.jar -DrepositoryId=nexus-releases -Durl=http://localhost:8081/repository/maven-releases/ -DgroupId=com.example -DartifactId=station-ski -Dversion=1.0.0 -Dpackaging=jar'
+                    sh 'mvn test'
                 }
             }
         }
     }
-
+    
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Le pipeline a été exécuté avec succès!'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo 'Le pipeline a échoué.'
         }
     }
 }
